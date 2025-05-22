@@ -39,7 +39,7 @@ const prompt = ai.definePrompt({
   // Removed output schema here to avoid requesting JSON mode from the image model
   prompt: (input: CartoonizeImageInput) => [ 
     {media: {url: input.photoDataUri}}, 
-    {text: 'Transform this image into a cartoon style. Output only the generated cartoon image.'},
+    {text: 'Transform this image into a cartoon style, while preserving the original colors and objects as much as possible. Output only the generated cartoon image.'},
   ],
   config: {
     responseModalities: ['TEXT', 'IMAGE'], // Expect an image in response
