@@ -19,6 +19,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+// SVG Icon for WhatsApp
+const WhatsAppLogo = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="#25D366" {...props}>
+    <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21h.01c5.46 0 9.91-4.45 9.91-9.91s-4.45-9.91-9.91-9.91zM17.53 14.3c-.27-.14-1.59-.78-1.84-.87-.25-.09-.43-.14-.61.14-.18.28-.69.87-.85 1.04s-.31.18-.58.06c-.27-.12-1.14-.42-2.18-1.35-.81-.73-1.36-1.63-1.53-1.91-.16-.28-.02-.43.12-.57.13-.13.27-.31.41-.47.16-.18.21-.31.31-.53s.05-.42-.03-.57c-.08-.14-.61-1.47-.84-2.01-.23-.54-.46-.47-.61-.47h-.5c-.18 0-.46.05-.7.31-.23.27-.87.85-.87 2.07s.9 2.4 1.02 2.56c.12.18 1.81 2.78 4.4 3.89 2.58 1.1 2.58.74 3.05.71.46-.04 1.59-.65 1.81-1.28.22-.63.22-1.17.16-1.28-.07-.11-.25-.18-.52-.31z"/>
+  </svg>
+);
+
+// SVG Icon for Viber
+const ViberLogo = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="#7360F2" {...props}>
+    <path d="M17.813 0c-3.063 0-5.726 1.688-7.184 4.24L9.57 5.502c-.25.626-.094 1.32.343 1.782.468.438 1.155.53 1.718.25l1.06-.53c.313-.156.53-.5.53-.843V5.5c0-1.032.843-1.875 1.875-1.875s1.875.843 1.875 1.875v.156c0 .344.218.688.53.844l1.062.53c.563.282 1.25.188 1.719-.25.437-.468.594-1.156.343-1.782l-1.06-1.264C19.383 1.688 19.347 0 17.813 0zM7.013 6.563c-1.015 0-1.843.828-1.843 1.844v6.093c0 .344-.125.657-.344.907l-1.03 1.03c-.345.344-.563.813-.563 1.313v2.718c0 .47.375.844.844.844h2.718c.5 0 .97-.218 1.313-.562l1.03-1.031c.25-.25.375-.563.375-.906V8.407c0-1.016-.828-1.844-1.843-1.844zm13.844 2.437l-1.72 2.158c-.28.343-.25.843.063 1.155l2.343 2.344c.313.313.813.313 1.125 0l2.344-2.344c.312-.312.343-.812.062-1.155L22.726 9c-.375-.47-.97-.53-1.406-.125l-1.469 1.22c-.032-.016-.063-.031-.094-.031h-.03c-.407-.032-.782.156-1.032.438zM5.451 21.513l-1.67-5.11c-.172-.53-.031-1.125.375-1.53l4.125-4.126c.406-.406 1-.547 1.531-.375l5.109 1.67c.531.172 1.125.031 1.531-.375l2.14-2.14c.407-.406.407-1.063 0-1.47l-1.015-1.015c-.406-.406-1.063-.406-1.47 0l-2.14 2.14c-.406.406-.9.547-1.53.375l-5.11-1.67c-.53-.172-1.125-.031-1.53.375L1.154 12.39c-.406.406-.547 1-.375 1.531l1.672 5.109c.172.531.031 1.125-.375 1.531l-2.032 2.03c-.406.407-.406 1.063 0 1.47l1.016 1.016c.406.406 1.062.406 1.469 0l2.03-2.031c.407-.406.548-.999.376-1.531z"/>
+  </svg>
+);
+
+
 export default function CartoonArea() {
   const [originalImageFile, setOriginalImageFile] = useState<File | null>(null);
   const [originalImageSrc, setOriginalImageSrc] = useState<string | null>(null);
@@ -151,28 +166,47 @@ export default function CartoonArea() {
           title: 'My Cartoon!',
           text: 'Check out my cartoon!',
         });
-        toast({ title: `Shared to ${platform}!`, description: 'Image sent successfully.' });
+        toast({ title: `Shared!`, description: 'Image sent successfully.' });
         return;
       }
-
+      
+      // Fallback to platform-specific URLs or clipboard copy
       switch (platform) {
         case 'telegram':
           window.open(`https://t.me/share/url?url=${encodeURIComponent(imageUrl)}&text=${text}`, '_blank');
           toast({ title: 'Sharing to Telegram', description: 'Please complete the action in the new tab.' });
           break;
         case 'whatsapp':
-          window.open(`https://api.whatsapp.com/send?text=${text}%0A${encodeURIComponent(imageUrl)}`, '_blank');
-          toast({ title: 'Sharing to WhatsApp', description: 'Please complete the action in the new tab.' });
+           // WhatsApp Web API doesn't directly support data URI for images in share links.
+           // Best user experience is to copy and instruct or use navigator.share if available.
+          if (navigator.clipboard && typeof navigator.clipboard.write === 'function') {
+            // @ts-ignore
+            const clipboardItem = new ClipboardItem({ [blob.type]: blob });
+             // @ts-ignore
+            await navigator.clipboard.write([clipboardItem]);
+            toast({ title: 'Image Copied!', description: 'Open WhatsApp and paste the image.' });
+          } else {
+            window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+            toast({ title: 'Sharing to WhatsApp', description: 'Please paste the image from your gallery or try downloading first.'});
+          }
           break;
         case 'viber':
-          window.open(`viber://forward?text=${text}%0A${encodeURIComponent(imageUrl)}`, '_blank');
-          toast({ title: 'Sharing to Viber', description: 'Attempting to open Viber...' });
+          // Viber also has limitations with data URIs in direct share links.
+          if (navigator.clipboard && typeof navigator.clipboard.write === 'function') {
+             // @ts-ignore
+            const clipboardItem = new ClipboardItem({ [blob.type]: blob });
+             // @ts-ignore
+            await navigator.clipboard.write([clipboardItem]);
+            toast({ title: 'Image Copied!', description: 'Open Viber and paste the image.' });
+          } else {
+            toast({ title: 'Sharing to Viber', description: 'Please try copying or downloading the image first.' });
+          }
           break;
         case 'instagram':
           if (navigator.clipboard && typeof navigator.clipboard.write === 'function') {
             // @ts-ignore
             const clipboardItem = new ClipboardItem({ [blob.type]: blob });
-            // @ts-ignore
+             // @ts-ignore
             await navigator.clipboard.write([clipboardItem]);
             toast({ title: 'Image Copied!', description: 'Open Instagram and paste the image into your story or post.' });
           } else {
@@ -184,11 +218,12 @@ export default function CartoonArea() {
       console.error(`Error sharing to ${platform}:`, err);
       toast({
         title: `Share to ${platform} Failed`,
-        description: `Could not initiate share to ${platform}. Please try downloading the image. Reason: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        description: `Could not initiate share. Please try downloading the image. Reason: ${err instanceof Error ? err.message : 'Unknown error'}`,
         variant: 'destructive',
       });
     }
   };
+
 
   return (
     <Card className="w-full max-w-3xl shadow-xl">
@@ -272,20 +307,34 @@ export default function CartoonArea() {
                   <Share2 className="mr-2 h-5 w-5" /> Share Image
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-[calc(100vw-2rem)] max-w-xs sm:w-auto">
-                <DropdownMenuItem onClick={() => handleSocialShare('telegram')}>
-                  <Send className="mr-2 h-4 w-4" /> Telegram
+              <DropdownMenuContent align="center" className="flex items-center justify-center p-2 gap-2">
+                <DropdownMenuItem 
+                  onClick={() => handleSocialShare('telegram')} 
+                  className="p-2 rounded-md hover:bg-accent focus:bg-accent cursor-pointer"
+                  aria-label="Share to Telegram"
+                >
+                  <Send className="h-6 w-6" />
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleSocialShare('whatsapp')}>
-                  {/* Using a generic icon for WhatsApp as one is not in Lucide */}
-                  <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp 
+                <DropdownMenuItem 
+                  onClick={() => handleSocialShare('whatsapp')}
+                  className="p-2 rounded-md hover:bg-accent focus:bg-accent cursor-pointer"
+                  aria-label="Share to WhatsApp"
+                >
+                  <WhatsAppLogo className="h-6 w-6" />
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleSocialShare('viber')}>
-                   {/* Using a generic icon for Viber */}
-                  <Phone className="mr-2 h-4 w-4" /> Viber
+                <DropdownMenuItem 
+                  onClick={() => handleSocialShare('viber')}
+                  className="p-2 rounded-md hover:bg-accent focus:bg-accent cursor-pointer"
+                  aria-label="Share to Viber"
+                >
+                   <ViberLogo className="h-6 w-6" />
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleSocialShare('instagram')}>
-                  <InstagramIcon className="mr-2 h-4 w-4" /> Instagram
+                <DropdownMenuItem 
+                  onClick={() => handleSocialShare('instagram')}
+                  className="p-2 rounded-md hover:bg-accent focus:bg-accent cursor-pointer"
+                  aria-label="Share to Instagram"
+                >
+                  <InstagramIcon className="h-6 w-6" />
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -295,14 +344,3 @@ export default function CartoonArea() {
     </Card>
   );
 }
-
-// Helper component for generic icons if needed
-const MessageCircle = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-  </svg>
-);
-
-const Phone = (props: React.SVGProps<SVGSVGElement>) => (
- <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-);
