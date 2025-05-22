@@ -44,15 +44,30 @@ export default function CartoonArea() {
         });
         setOriginalImageFile(null);
         setOriginalImageSrc(null);
+        event.target.value = ''; // Clear the input
         return;
       }
       setOriginalImageFile(file);
       const reader = new FileReader();
+      reader.onloadstart = () => {
+        setError(null); // Clear previous errors on new load
+        setOriginalImageSrc(null); // Clear previous image preview
+      };
       reader.onloadend = () => {
         setOriginalImageSrc(reader.result as string);
-        setError(null); // Clear previous errors
       };
+      reader.onerror = () => {
+        toast({
+          title: 'File Read Error',
+          description: 'Could not read the selected file. Please try another image.',
+          variant: 'destructive',
+        });
+        setOriginalImageFile(null);
+        setOriginalImageSrc(null);
+        setError('Failed to read file.');
+      }
       reader.readAsDataURL(file);
+      event.target.value = ''; // Clear the file input so the same file can be re-selected
     }
   };
 
@@ -199,43 +214,40 @@ export default function CartoonArea() {
             <div className="w-full md:w-[45%] space-y-2">
               <h3 className="text-lg font-semibold text-center text-muted-foreground">Original Image</h3>
               <div className="aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted/20 overflow-hidden">
-                {originalImageSrc ? (
-                  <Image src={originalImageSrc} alt="Original" width={400} height={400} className="object-cover w-full h-full" data-ai-hint="uploaded photo" />
-                ) : (
-                  <div className="text-center text-muted-foreground p-4">
-                    <ImageIcon className="mx-auto h-12 w-12 mb-2" />
-                    <p>Your uploaded image will appear here.</p>
-                  </div>
-                )}
+                <Image src={originalImageSrc} alt="Original" width={400} height={400} className="object-cover w-full h-full" data-ai-hint="uploaded photo" />
               </div>
             </div>
 
-            <div className="hidden md:flex items-center justify-center">
-              <ArrowRight className="h-10 w-10 text-primary" />
-            </div>
+            {(isLoading || cartoonImageSrc) && (
+              <>
+                <div className="hidden md:flex items-center justify-center">
+                  <ArrowRight className="h-10 w-10 text-primary" />
+                </div>
 
-            <div className="flex md:hidden items-center justify-center">
-              <ArrowDown className="h-10 w-10 text-primary" />
-            </div>
+                <div className="flex md:hidden items-center justify-center">
+                  <ArrowDown className="h-10 w-10 text-primary" />
+                </div>
 
-            <div ref={cartoonImageContainerRef} className="w-full md:w-[45%] space-y-2">
-              <h3 className="text-lg font-semibold text-center text-muted-foreground">Cartoon Version</h3>
-              <div className="aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted/20 overflow-hidden">
-                {isLoading ? (
-                   <div className="w-full h-full flex flex-col items-center justify-center">
-                      <Skeleton className="h-3/4 w-3/4" />
-                      <p className="mt-2 text-sm text-muted-foreground">Generating your cartoon...</p>
-                   </div>
-                ) : cartoonImageSrc ? (
-                  <Image src={cartoonImageSrc} alt="Cartoonized" width={400} height={400} className="object-cover w-full h-full" data-ai-hint="cartoon character" />
-                ) : (
-                   <div className="text-center text-muted-foreground p-4">
-                    <ImageIcon className="mx-auto h-12 w-12 mb-2" />
-                    <p>Your cartoonized image will appear here.</p>
+                <div ref={cartoonImageContainerRef} className="w-full md:w-[45%] space-y-2">
+                  <h3 className="text-lg font-semibold text-center text-muted-foreground">Cartoon Version</h3>
+                  <div className="aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted/20 overflow-hidden">
+                    {isLoading ? (
+                       <div className="w-full h-full flex flex-col items-center justify-center">
+                          <Skeleton className="h-3/4 w-3/4" />
+                          <p className="mt-2 text-sm text-muted-foreground">Generating your cartoon...</p>
+                       </div>
+                    ) : cartoonImageSrc ? (
+                      <Image src={cartoonImageSrc} alt="Cartoonized" width={400} height={400} className="object-cover w-full h-full" data-ai-hint="cartoon character" />
+                    ) : (
+                       <div className="text-center text-muted-foreground p-4">
+                        <ImageIcon className="mx-auto h-12 w-12 mb-2" />
+                        <p>Your cartoonized image will appear here after generation.</p>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            </div>
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -253,3 +265,4 @@ export default function CartoonArea() {
     </Card>
   );
 }
+
