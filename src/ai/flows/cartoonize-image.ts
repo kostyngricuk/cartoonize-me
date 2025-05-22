@@ -36,9 +36,9 @@ const prompt = ai.definePrompt({
   name: 'cartoonizeImagePrompt',
   model: 'googleai/gemini-2.0-flash-exp', // Use the experimental image generation model
   input: {schema: CartoonizeImageInputSchema},
-  output: {schema: CartoonizeImageOutputSchema},
-  prompt: (input: CartoonizeImageInput) => [ // Use a function to construct the prompt
-    {media: {url: input.photoDataUri}}, // Directly use the input photoDataUri
+  // Removed output schema here to avoid requesting JSON mode from the image model
+  prompt: (input: CartoonizeImageInput) => [ 
+    {media: {url: input.photoDataUri}}, 
     {text: 'Transform this image into a cartoon style. Output only the generated cartoon image.'},
   ],
   config: {
@@ -50,7 +50,7 @@ const cartoonizeImageFlow = ai.defineFlow(
   {
     name: 'cartoonizeImageFlow',
     inputSchema: CartoonizeImageInputSchema,
-    outputSchema: CartoonizeImageOutputSchema,
+    outputSchema: CartoonizeImageOutputSchema, // This ensures the flow's output is correctly typed
   },
   async input => {
     const {media} = await prompt(input);
@@ -63,3 +63,4 @@ const cartoonizeImageFlow = ai.defineFlow(
     return {cartoonDataUri: media.url};
   }
 );
+
