@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, ChangeEvent, useEffect } from 'react';
+import { useState, ChangeEvent, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { UploadCloud, Download, Share2, Image as ImageIcon, Wand2, ArrowRight, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,11 +20,18 @@ export default function CartoonArea() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const cartoonImageContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Clear cartoon image if original image changes
     setCartoonImageSrc(null);
   }, [originalImageSrc]);
+
+  useEffect(() => {
+    if (cartoonImageSrc && !isLoading && cartoonImageContainerRef.current) {
+      cartoonImageContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [cartoonImageSrc, isLoading]);
 
   const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -130,6 +137,7 @@ export default function CartoonArea() {
 
       if (navigator.clipboard && typeof navigator.clipboard.write === 'function') {
         try {
+          // Browsers like Chrome require the blob to be of a known image type for ClipboardItem
           const clipboardItem = new ClipboardItem({ [blob.type]: blob });
           await navigator.clipboard.write([clipboardItem]);
           toast({ title: 'Image Copied!', description: 'Cartoon image copied to clipboard.' });
@@ -210,7 +218,7 @@ export default function CartoonArea() {
               <ArrowDown className="h-10 w-10 text-primary" />
             </div>
 
-            <div className="w-full md:w-[45%] space-y-2">
+            <div ref={cartoonImageContainerRef} className="w-full md:w-[45%] space-y-2">
               <h3 className="text-lg font-semibold text-center text-muted-foreground">Cartoon Version</h3>
               <div className="aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted/20 overflow-hidden">
                 {isLoading ? (
