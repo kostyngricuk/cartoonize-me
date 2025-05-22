@@ -166,9 +166,8 @@ export default function CartoonArea() {
               <h3 className="text-lg font-semibold text-center text-muted-foreground">Original Image</h3>
               <div className="aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted/20 overflow-hidden">
                 {originalImageSrc ? (
-                  <Image src={originalImageSrc} alt="Original" width={400} height={400} className="object-contain max-h-full max-w-full" data-ai-hint="uploaded photo" />
+                  <Image src={originalImageSrc} alt="Original" width={400} height={400} className="object-cover w-full h-full" data-ai-hint="uploaded photo" />
                 ) : (
-                  // This part should ideally not be reached if originalImageSrc is the condition for the parent div
                   <div className="text-center text-muted-foreground p-4">
                     <ImageIcon className="mx-auto h-12 w-12 mb-2" />
                     <p>Your uploaded image will appear here.</p>
@@ -197,7 +196,7 @@ export default function CartoonArea() {
                       <p className="mt-2 text-sm text-muted-foreground">Generating your cartoon...</p>
                    </div>
                 ) : cartoonImageSrc ? (
-                  <Image src={cartoonImageSrc} alt="Cartoonized" width={400} height={400} className="object-contain max-h-full max-w-full" data-ai-hint="cartoon character" />
+                  <Image src={cartoonImageSrc} alt="Cartoonized" width={400} height={400} className="object-cover w-full h-full" data-ai-hint="cartoon character" />
                 ) : (
                    <div className="text-center text-muted-foreground p-4">
                     <ImageIcon className="mx-auto h-12 w-12 mb-2" />
@@ -223,5 +222,3 @@ export default function CartoonArea() {
     </Card>
   );
 }
-
-    
