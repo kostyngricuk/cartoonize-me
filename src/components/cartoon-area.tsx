@@ -3,7 +3,7 @@
 
 import { useState, ChangeEvent, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { UploadCloud, Download, Share2, Image as ImageIcon, Wand2, ArrowRight, ArrowDown } from 'lucide-react';
+import { UploadCloud, Download, Image as ImageIcon, Wand2, ArrowRight, ArrowDown, Send, Instagram as InstagramIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -23,7 +23,6 @@ export default function CartoonArea() {
   const cartoonImageContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Clear cartoon image if original image changes
     setCartoonImageSrc(null);
   }, [originalImageSrc]);
 
@@ -44,14 +43,14 @@ export default function CartoonArea() {
         });
         setOriginalImageFile(null);
         setOriginalImageSrc(null);
-        event.target.value = ''; // Clear the input
+        event.target.value = '';
         return;
       }
       setOriginalImageFile(file);
       const reader = new FileReader();
       reader.onloadstart = () => {
-        setError(null); // Clear previous errors on new load
-        setOriginalImageSrc(null); // Clear previous image preview
+        setError(null);
+        setOriginalImageSrc(null); 
       };
       reader.onloadend = () => {
         setOriginalImageSrc(reader.result as string);
@@ -67,7 +66,7 @@ export default function CartoonArea() {
         setError('Failed to read file.');
       }
       reader.readAsDataURL(file);
-      event.target.value = ''; // Clear the file input so the same file can be re-selected
+      event.target.value = '';
     }
   };
 
@@ -83,7 +82,7 @@ export default function CartoonArea() {
 
     setIsLoading(true);
     setError(null);
-    setCartoonImageSrc(null); // Clear previous cartoon
+    setCartoonImageSrc(null);
 
     try {
       const input: CartoonizeImageInput = { photoDataUri: originalImageSrc };
@@ -126,58 +125,54 @@ export default function CartoonArea() {
     toast({ title: 'Download Started', description: 'Your cartoon image is downloading.'});
   };
 
-  const handleShare = async () => {
-    if (!cartoonImageSrc) return;
+  const handleSocialShare = async (platform: 'telegram' | 'whatsapp' | 'viber' | 'instagram') => {
+    if (!cartoonImageSrc) {
+      toast({ title: 'No Image', description: 'Please generate a cartoon image first.', variant: 'destructive' });
+      return;
+    }
+
+    const text = encodeURIComponent("Check out my cartoon created with CartoonizeMe!");
+    const imageUrl = cartoonImageSrc; // This is a data URI
 
     try {
-      const response = await fetch(cartoonImageSrc);
-      const blob = await response.blob();
-      const file = new File([blob], 'cartoon.png', { type: blob.type });
-
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-            await navigator.share({
-              files: [file],
-            });
-            toast({ title: 'Image Shared!', description: 'Your cartoon image has been shared.' });
-            return;
-        } catch (shareError) {
-            if ((shareError as DOMException).name === 'AbortError') {
-              console.log('Share was cancelled by the user.');
-            } else {
-              console.error('Error using navigator.share:', shareError);
-            }
-        }
+      switch (platform) {
+        case 'telegram':
+          window.open(`https://t.me/share/url?url=${encodeURIComponent(imageUrl)}&text=${text}`, '_blank');
+          toast({ title: 'Sharing to Telegram', description: 'Please complete the action in the new tab.' });
+          break;
+        case 'whatsapp':
+          // Note: WhatsApp Web might not directly embed very long data URIs as images.
+          // It's better for sharing links to hosted images.
+          window.open(`https://api.whatsapp.com/send?text=${text}%0A${encodeURIComponent(imageUrl)}`, '_blank');
+          toast({ title: 'Sharing to WhatsApp', description: 'Please complete the action in the new tab.' });
+          break;
+        case 'viber':
+          // Viber's viber:// protocol might be blocked by some browsers for security reasons from web pages.
+          // Sharing a text message with the data URI.
+          window.open(`viber://forward?text=${text}%0A${encodeURIComponent(imageUrl)}`, '_blank');
+          toast({ title: 'Sharing to Viber', description: 'Attempting to open Viber...' });
+          break;
+        case 'instagram':
+          const response = await fetch(imageUrl);
+          const blob = await response.blob();
+          if (navigator.clipboard && typeof navigator.clipboard.write === 'function') {
+            const clipboardItem = new ClipboardItem({ [blob.type]: blob });
+            await navigator.clipboard.write([clipboardItem]);
+            toast({ title: 'Image Copied!', description: 'Open Instagram and paste the image into your story or post.' });
+          } else {
+            throw new Error('Clipboard API not fully supported for image copying.');
+          }
+          break;
       }
-
-      if (navigator.clipboard && typeof navigator.clipboard.write === 'function') {
-        try {
-          // Browsers like Chrome require the blob to be of a known image type for ClipboardItem
-          const clipboardItem = new ClipboardItem({ [blob.type]: blob });
-          await navigator.clipboard.write([clipboardItem]);
-          toast({ title: 'Image Copied!', description: 'Cartoon image copied to clipboard.' });
-          return; 
-        } catch (copyError) {
-          console.error('Error copying image to clipboard:', copyError);
-        }
-      }
-      
-      toast({
-        title: 'Sharing Not Supported',
-        description: 'Direct sharing or copying is not supported by your browser. Please download the image to share it.',
-        variant: 'default',
-      });
-
     } catch (err) {
-      console.error('Error preparing image for sharing:', err);
+      console.error(`Error sharing to ${platform}:`, err);
       toast({
-        title: 'Sharing Failed',
-        description: 'Could not prepare image for sharing. Please try downloading.',
+        title: `Share to ${platform} Failed`,
+        description: `Could not initiate share to ${platform}. Please try downloading the image. Reason: ${err instanceof Error ? err.message : 'Unknown error'}`,
         variant: 'destructive',
       });
     }
   };
-
 
   return (
     <Card className="w-full max-w-3xl shadow-xl">
@@ -223,11 +218,9 @@ export default function CartoonArea() {
                 <div className="hidden md:flex items-center justify-center">
                   <ArrowRight className="h-10 w-10 text-primary" />
                 </div>
-
-                <div className="flex md:hidden items-center justify-center">
+                <div className="flex md:hidden items-center justify-center my-2">
                   <ArrowDown className="h-10 w-10 text-primary" />
                 </div>
-
                 <div ref={cartoonImageContainerRef} className="w-full md:w-[45%] space-y-2">
                   <h3 className="text-lg font-semibold text-center text-muted-foreground">Cartoon Version</h3>
                   <div className="aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted/20 overflow-hidden">
@@ -252,17 +245,33 @@ export default function CartoonArea() {
         )}
 
         {cartoonImageSrc && !isLoading && (
-          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
-            <Button onClick={handleDownload} variant="outline" size="lg">
+          <div className="flex flex-col items-center gap-4 pt-6">
+            <Button onClick={handleDownload} variant="outline" size="lg" className="w-full max-w-xs">
               <Download className="mr-2 h-5 w-5" /> Download
             </Button>
-            <Button onClick={handleShare} variant="default" size="lg" className="bg-primary hover:bg-primary/90">
-              <Share2 className="mr-2 h-5 w-5" /> Share Image
-            </Button>
+
+            <div className="w-full max-w-sm text-center mt-2">
+              <p className="text-muted-foreground text-sm mb-2">Or share on:</p>
+              <div className="grid grid-cols-2 gap-2">
+                <Button onClick={() => handleSocialShare('telegram')} variant="outline" size="default">
+                  <Send className="mr-2 h-4 w-4" /> Telegram
+                </Button>
+                <Button onClick={() => handleSocialShare('whatsapp')} variant="outline" size="default">
+                  {/* No direct Lucide icon, consider a generic one or just text */}
+                  WhatsApp
+                </Button>
+                <Button onClick={() => handleSocialShare('viber')} variant="outline" size="default">
+                  {/* No direct Lucide icon, consider a generic one or just text */}
+                  Viber
+                </Button>
+                <Button onClick={() => handleSocialShare('instagram')} variant="outline" size="default">
+                  <InstagramIcon className="mr-2 h-4 w-4" /> Instagram
+                </Button>
+              </div>
+            </div>
           </div>
         )}
       </CardContent>
     </Card>
   );
 }
-
