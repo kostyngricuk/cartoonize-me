@@ -3,7 +3,7 @@
 
 import { useState, ChangeEvent, useEffect } from 'react';
 import Image from 'next/image';
-import { UploadCloud, Download, Send, Image as ImageIcon, Wand2 } from 'lucide-react';
+import { UploadCloud, Download, Send, Image as ImageIcon, Wand2, ArrowRight, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -159,8 +159,9 @@ export default function CartoonArea() {
           {error && <p className="text-sm text-destructive mt-2">{error}</p>}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-          <div className="space-y-2">
+        <div className="flex flex-col md:flex-row items-center md:items-stretch md:justify-between gap-4 pt-6">
+          {/* Original Image Section */}
+          <div className="w-full md:w-[45%] space-y-2">
             <h3 className="text-lg font-semibold text-center text-muted-foreground">Original Image</h3>
             <div className="aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted/20 overflow-hidden">
               {originalImageSrc ? (
@@ -174,7 +175,18 @@ export default function CartoonArea() {
             </div>
           </div>
 
-          <div className="space-y-2">
+          {/* Arrow Icon - Desktop */}
+          <div className="hidden md:flex items-center justify-center">
+            <ArrowRight className="h-10 w-10 text-primary" />
+          </div>
+
+          {/* Arrow Icon - Mobile */}
+          <div className="flex md:hidden items-center justify-center">
+            <ArrowDown className="h-10 w-10 text-primary" />
+          </div>
+
+          {/* Cartoon Image Section */}
+          <div className="w-full md:w-[45%] space-y-2">
             <h3 className="text-lg font-semibold text-center text-muted-foreground">Cartoon Version</h3>
             <div className="aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted/20 overflow-hidden">
               {isLoading ? (
@@ -208,4 +220,3 @@ export default function CartoonArea() {
     </Card>
   );
 }
-
