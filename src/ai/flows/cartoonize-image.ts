@@ -37,9 +37,9 @@ const prompt = ai.definePrompt({
   model: 'googleai/gemini-2.0-flash-exp', // Use the experimental image generation model
   input: {schema: CartoonizeImageInputSchema},
   output: {schema: CartoonizeImageOutputSchema},
-  prompt: [
-    {media: {url: '{{photoDataUri}}'}}, // Use double-stash for data URI
-    {text: 'Transform this image into a cartoon style. Output only the generated cartoon image.'}, // Refined prompt
+  prompt: (input: CartoonizeImageInput) => [ // Use a function to construct the prompt
+    {media: {url: input.photoDataUri}}, // Directly use the input photoDataUri
+    {text: 'Transform this image into a cartoon style. Output only the generated cartoon image.'},
   ],
   config: {
     responseModalities: ['TEXT', 'IMAGE'], // Expect an image in response
