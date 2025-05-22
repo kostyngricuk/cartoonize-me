@@ -159,52 +159,55 @@ export default function CartoonArea() {
           {error && <p className="text-sm text-destructive mt-2">{error}</p>}
         </div>
 
-        <div className="flex flex-col md:flex-row items-center md:items-stretch md:justify-between gap-4 pt-6">
-          {/* Original Image Section */}
-          <div className="w-full md:w-[45%] space-y-2">
-            <h3 className="text-lg font-semibold text-center text-muted-foreground">Original Image</h3>
-            <div className="aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted/20 overflow-hidden">
-              {originalImageSrc ? (
-                <Image src={originalImageSrc} alt="Original" width={400} height={400} className="object-contain max-h-full max-w-full" data-ai-hint="uploaded photo" />
-              ) : (
-                <div className="text-center text-muted-foreground p-4">
-                  <ImageIcon className="mx-auto h-12 w-12 mb-2" />
-                  <p>Your uploaded image will appear here.</p>
-                </div>
-              )}
+        {originalImageSrc && (
+          <div className="flex flex-col md:flex-row items-center md:items-stretch md:justify-between gap-4 pt-6">
+            {/* Original Image Section */}
+            <div className="w-full md:w-[45%] space-y-2">
+              <h3 className="text-lg font-semibold text-center text-muted-foreground">Original Image</h3>
+              <div className="aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted/20 overflow-hidden">
+                {originalImageSrc ? (
+                  <Image src={originalImageSrc} alt="Original" width={400} height={400} className="object-contain max-h-full max-w-full" data-ai-hint="uploaded photo" />
+                ) : (
+                  // This part should ideally not be reached if originalImageSrc is the condition for the parent div
+                  <div className="text-center text-muted-foreground p-4">
+                    <ImageIcon className="mx-auto h-12 w-12 mb-2" />
+                    <p>Your uploaded image will appear here.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Arrow Icon - Desktop */}
+            <div className="hidden md:flex items-center justify-center">
+              <ArrowRight className="h-10 w-10 text-primary" />
+            </div>
+
+            {/* Arrow Icon - Mobile */}
+            <div className="flex md:hidden items-center justify-center">
+              <ArrowDown className="h-10 w-10 text-primary" />
+            </div>
+
+            {/* Cartoon Image Section */}
+            <div className="w-full md:w-[45%] space-y-2">
+              <h3 className="text-lg font-semibold text-center text-muted-foreground">Cartoon Version</h3>
+              <div className="aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted/20 overflow-hidden">
+                {isLoading ? (
+                   <div className="w-full h-full flex flex-col items-center justify-center">
+                      <Skeleton className="h-3/4 w-3/4" />
+                      <p className="mt-2 text-sm text-muted-foreground">Generating your cartoon...</p>
+                   </div>
+                ) : cartoonImageSrc ? (
+                  <Image src={cartoonImageSrc} alt="Cartoonized" width={400} height={400} className="object-contain max-h-full max-w-full" data-ai-hint="cartoon character" />
+                ) : (
+                   <div className="text-center text-muted-foreground p-4">
+                    <ImageIcon className="mx-auto h-12 w-12 mb-2" />
+                    <p>Your cartoonized image will appear here.</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-
-          {/* Arrow Icon - Desktop */}
-          <div className="hidden md:flex items-center justify-center">
-            <ArrowRight className="h-10 w-10 text-primary" />
-          </div>
-
-          {/* Arrow Icon - Mobile */}
-          <div className="flex md:hidden items-center justify-center">
-            <ArrowDown className="h-10 w-10 text-primary" />
-          </div>
-
-          {/* Cartoon Image Section */}
-          <div className="w-full md:w-[45%] space-y-2">
-            <h3 className="text-lg font-semibold text-center text-muted-foreground">Cartoon Version</h3>
-            <div className="aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted/20 overflow-hidden">
-              {isLoading ? (
-                 <div className="w-full h-full flex flex-col items-center justify-center">
-                    <Skeleton className="h-3/4 w-3/4" />
-                    <p className="mt-2 text-sm text-muted-foreground">Generating your cartoon...</p>
-                 </div>
-              ) : cartoonImageSrc ? (
-                <Image src={cartoonImageSrc} alt="Cartoonized" width={400} height={400} className="object-contain max-h-full max-w-full" data-ai-hint="cartoon character" />
-              ) : (
-                 <div className="text-center text-muted-foreground p-4">
-                  <ImageIcon className="mx-auto h-12 w-12 mb-2" />
-                  <p>Your cartoonized image will appear here.</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        )}
 
         {cartoonImageSrc && !isLoading && (
           <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
@@ -220,3 +223,5 @@ export default function CartoonArea() {
     </Card>
   );
 }
+
+    
