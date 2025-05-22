@@ -3,7 +3,7 @@
 
 import { useState, ChangeEvent, useEffect } from 'react';
 import Image from 'next/image';
-import { UploadCloud, Download, Share2, Image as ImageIcon, Wand2, ArrowRight, ArrowDown, ClipboardCopy } from 'lucide-react';
+import { UploadCloud, Download, Share2, Image as ImageIcon, Wand2, ArrowRight, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -90,11 +90,10 @@ export default function CartoonArea() {
     const link = document.createElement('a');
     link.href = cartoonImageSrc;
     
-    // Try to derive a more specific filename if possible (e.g. from originalImageFile name)
     let filename = 'cartoon_image.png';
     if (originalImageFile?.name) {
         const nameParts = originalImageFile.name.split('.');
-        nameParts.pop(); // remove extension
+        nameParts.pop(); 
         filename = `${nameParts.join('.')}_cartoon.png`;
     }
 
@@ -113,7 +112,6 @@ export default function CartoonArea() {
       const blob = await response.blob();
       const file = new File([blob], 'cartoon.png', { type: blob.type });
 
-      // 1. Try navigator.share with only the file
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
             await navigator.share({
@@ -122,38 +120,25 @@ export default function CartoonArea() {
             toast({ title: 'Image Shared!', description: 'Your cartoon image has been shared.' });
             return;
         } catch (shareError) {
-            // If navigator.share() fails (e.g., user cancels), it might throw an error or not.
-            // We'll log it and fall through to clipboard copy if it's an AbortError or similar.
-            // For other errors, we might not want to immediately try copying.
             if ((shareError as DOMException).name === 'AbortError') {
               console.log('Share was cancelled by the user.');
-              // Optionally, you could display a specific message here or just do nothing and let the user try again.
-              // For now, we'll let it fall through to clipboard attempt if user cancels.
             } else {
               console.error('Error using navigator.share:', shareError);
-              // Fall through to clipboard, as share API might be buggy or unexpectedly fail.
             }
         }
       }
 
-      // 2. Try navigator.clipboard.write (Copy to Clipboard)
       if (navigator.clipboard && typeof navigator.clipboard.write === 'function') {
         try {
           const clipboardItem = new ClipboardItem({ [blob.type]: blob });
           await navigator.clipboard.write([clipboardItem]);
           toast({ title: 'Image Copied!', description: 'Cartoon image copied to clipboard.' });
+          return; 
         } catch (copyError) {
           console.error('Error copying image to clipboard:', copyError);
-          toast({
-            title: 'Copy Failed',
-            description: 'Could not copy image. Please download and share manually.',
-            variant: 'destructive',
-          });
         }
-        return;
       }
       
-      // 3. Final fallback: Prompt to download
       toast({
         title: 'Sharing Not Supported',
         description: 'Direct sharing or copying is not supported by your browser. Please download the image to share it.',
@@ -185,14 +170,14 @@ export default function CartoonArea() {
       <CardContent className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="file-upload" className="text-base font-medium">Upload Photo</Label>
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-col md:flex-row md:items-center gap-2">
             <Label htmlFor="file-upload" className="flex-grow">
                <Input id="file-upload" type="file" onChange={handleImageUpload} accept="image/*" className="hidden" />
                <Button asChild variant="outline" className="w-full cursor-pointer">
                 <div><UploadCloud className="mr-2 h-5 w-5" /> {originalImageFile ? originalImageFile.name : 'Choose an image...'}</div>
                </Button>
             </Label>
-            <Button onClick={handleCartoonize} disabled={isLoading || !originalImageSrc} className="bg-accent hover:bg-accent/90">
+            <Button onClick={handleCartoonize} disabled={isLoading || !originalImageSrc} className="bg-accent hover:bg-accent/90 w-full md:w-auto">
               <Wand2 className="mr-2 h-5 w-5" />
               {isLoading ? 'Cartoonizing...' : 'Cartoonize!'}
             </Button>
@@ -203,7 +188,6 @@ export default function CartoonArea() {
 
         {originalImageSrc && (
           <div className="flex flex-col md:flex-row items-center md:items-stretch md:justify-between gap-4 pt-6">
-            {/* Original Image Section */}
             <div className="w-full md:w-[45%] space-y-2">
               <h3 className="text-lg font-semibold text-center text-muted-foreground">Original Image</h3>
               <div className="aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted/20 overflow-hidden">
@@ -218,17 +202,14 @@ export default function CartoonArea() {
               </div>
             </div>
 
-            {/* Arrow Icon - Desktop */}
             <div className="hidden md:flex items-center justify-center">
               <ArrowRight className="h-10 w-10 text-primary" />
             </div>
 
-            {/* Arrow Icon - Mobile */}
             <div className="flex md:hidden items-center justify-center">
               <ArrowDown className="h-10 w-10 text-primary" />
             </div>
 
-            {/* Cartoon Image Section */}
             <div className="w-full md:w-[45%] space-y-2">
               <h3 className="text-lg font-semibold text-center text-muted-foreground">Cartoon Version</h3>
               <div className="aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted/20 overflow-hidden">
