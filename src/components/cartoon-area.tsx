@@ -3,7 +3,7 @@
 
 import { useState, ChangeEvent, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { UploadCloud, Download, Image as ImageIcon, Wand2, ArrowRight, ArrowDown, Send, Instagram as InstagramIcon } from 'lucide-react';
+import { UploadCloud, Download, Image as ImageIcon, Wand2, ArrowRight, ArrowDown, Send, Instagram as InstagramIcon, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,12 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { cartoonizeImage, type CartoonizeImageInput } from '@/ai/flows/cartoonize-image';
 import { Skeleton } from './ui/skeleton';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function CartoonArea() {
   const [originalImageFile, setOriginalImageFile] = useState<File | null>(null);
@@ -135,32 +141,42 @@ export default function CartoonArea() {
     const imageUrl = cartoonImageSrc; // This is a data URI
 
     try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const file = new File([blob], "cartoon.png", { type: blob.type });
+
+      if (platform !== 'instagram' && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'My Cartoon!',
+          text: 'Check out my cartoon!',
+        });
+        toast({ title: `Shared to ${platform}!`, description: 'Image sent successfully.' });
+        return;
+      }
+
       switch (platform) {
         case 'telegram':
           window.open(`https://t.me/share/url?url=${encodeURIComponent(imageUrl)}&text=${text}`, '_blank');
           toast({ title: 'Sharing to Telegram', description: 'Please complete the action in the new tab.' });
           break;
         case 'whatsapp':
-          // Note: WhatsApp Web might not directly embed very long data URIs as images.
-          // It's better for sharing links to hosted images.
           window.open(`https://api.whatsapp.com/send?text=${text}%0A${encodeURIComponent(imageUrl)}`, '_blank');
           toast({ title: 'Sharing to WhatsApp', description: 'Please complete the action in the new tab.' });
           break;
         case 'viber':
-          // Viber's viber:// protocol might be blocked by some browsers for security reasons from web pages.
-          // Sharing a text message with the data URI.
           window.open(`viber://forward?text=${text}%0A${encodeURIComponent(imageUrl)}`, '_blank');
           toast({ title: 'Sharing to Viber', description: 'Attempting to open Viber...' });
           break;
         case 'instagram':
-          const response = await fetch(imageUrl);
-          const blob = await response.blob();
           if (navigator.clipboard && typeof navigator.clipboard.write === 'function') {
+            // @ts-ignore
             const clipboardItem = new ClipboardItem({ [blob.type]: blob });
+            // @ts-ignore
             await navigator.clipboard.write([clipboardItem]);
             toast({ title: 'Image Copied!', description: 'Open Instagram and paste the image into your story or post.' });
           } else {
-            throw new Error('Clipboard API not fully supported for image copying.');
+             throw new Error('Clipboard API not fully supported for image copying.');
           }
           break;
       }
@@ -247,31 +263,46 @@ export default function CartoonArea() {
         {cartoonImageSrc && !isLoading && (
           <div className="flex flex-col items-center gap-4 pt-6">
             <Button onClick={handleDownload} variant="outline" size="lg" className="w-full max-w-xs">
-              <Download className="mr-2 h-5 w-5" /> Download
+              <Download className="mr-2 h-5 w-5" /> Download Image
             </Button>
 
-            <div className="w-full max-w-sm text-center mt-2">
-              <p className="text-muted-foreground text-sm mb-2">Or share on:</p>
-              <div className="grid grid-cols-2 gap-2">
-                <Button onClick={() => handleSocialShare('telegram')} variant="outline" size="default">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="lg" className="w-full max-w-xs">
+                  <Share2 className="mr-2 h-5 w-5" /> Share Image
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" className="w-[calc(100vw-2rem)] max-w-xs sm:w-auto">
+                <DropdownMenuItem onClick={() => handleSocialShare('telegram')}>
                   <Send className="mr-2 h-4 w-4" /> Telegram
-                </Button>
-                <Button onClick={() => handleSocialShare('whatsapp')} variant="outline" size="default">
-                  {/* No direct Lucide icon, consider a generic one or just text */}
-                  WhatsApp
-                </Button>
-                <Button onClick={() => handleSocialShare('viber')} variant="outline" size="default">
-                  {/* No direct Lucide icon, consider a generic one or just text */}
-                  Viber
-                </Button>
-                <Button onClick={() => handleSocialShare('instagram')} variant="outline" size="default">
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleSocialShare('whatsapp')}>
+                  {/* Using a generic icon for WhatsApp as one is not in Lucide */}
+                  <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp 
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleSocialShare('viber')}>
+                   {/* Using a generic icon for Viber */}
+                  <Phone className="mr-2 h-4 w-4" /> Viber
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleSocialShare('instagram')}>
                   <InstagramIcon className="mr-2 h-4 w-4" /> Instagram
-                </Button>
-              </div>
-            </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         )}
       </CardContent>
     </Card>
   );
 }
+
+// Helper component for generic icons if needed
+const MessageCircle = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+  </svg>
+);
+
+const Phone = (props: React.SVGProps<SVGSVGElement>) => (
+ <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+);
