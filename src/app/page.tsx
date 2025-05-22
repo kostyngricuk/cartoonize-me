@@ -20,8 +20,7 @@ export default function Home() {
       <CartoonArea />
 
       <footer className="mt-12 text-center text-sm text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} CartoonizeMe. All rights reserved.</p>
-        <p>Powered by Firebase Studio & Genkit AI.</p>
+        <p>&copy; {new Date().getFullYear()} CartoonizeMe. All rights <s>reserved</s>.</p>
       </footer>
     </main>
   );
