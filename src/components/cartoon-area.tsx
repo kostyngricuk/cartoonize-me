@@ -3,7 +3,7 @@
 
 import { useState, ChangeEvent, useEffect } from 'react';
 import Image from 'next/image';
-import { UploadCloud, Download, Send, Image as ImageIcon, Wand2, ArrowRight, ArrowDown } from 'lucide-react';
+import { UploadCloud, Download, Share2, Image as ImageIcon, Wand2, ArrowRight, ArrowDown, ClipboardCopy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -43,7 +43,7 @@ export default function CartoonArea() {
       const reader = new FileReader();
       reader.onloadend = () => {
         setOriginalImageSrc(reader.result as string);
-        setError(null);
+        setError(null); // Clear previous errors
       };
       reader.readAsDataURL(file);
     }
@@ -89,7 +89,16 @@ export default function CartoonArea() {
     if (!cartoonImageSrc) return;
     const link = document.createElement('a');
     link.href = cartoonImageSrc;
-    link.download = 'cartoon_image.png'; // Suggest a filename
+    
+    // Try to derive a more specific filename if possible (e.g. from originalImageFile name)
+    let filename = 'cartoon_image.png';
+    if (originalImageFile?.name) {
+        const nameParts = originalImageFile.name.split('.');
+        nameParts.pop(); // remove extension
+        filename = `${nameParts.join('.')}_cartoon.png`;
+    }
+
+    link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -103,31 +112,64 @@ export default function CartoonArea() {
       const response = await fetch(cartoonImageSrc);
       const blob = await response.blob();
       const file = new File([blob], 'cartoon.png', { type: blob.type });
-      
+
+      // 1. Try navigator.share with only the file
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          title: 'My Cartoon Image',
-          text: 'Check out this cool cartoon I created with CartoonizeMe!',
-          files: [file],
-        });
-        toast({ title: 'Shared!', description: 'Image shared successfully.' });
-      } else {
-        // Fallback for browsers that don't support navigator.share or can't share files
-        // Attempt to share a link to the app or prompt download
-        const shareUrl = window.location.href;
-        const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent('Check out CartoonizeMe to create awesome cartoon images!')}`;
-        window.open(telegramUrl, '_blank');
-        toast({ title: 'Share via Telegram', description: 'Opened Telegram share link. You can also download the image to share it directly.' });
+        try {
+            await navigator.share({
+              files: [file],
+            });
+            toast({ title: 'Image Shared!', description: 'Your cartoon image has been shared.' });
+            return;
+        } catch (shareError) {
+            // If navigator.share() fails (e.g., user cancels), it might throw an error or not.
+            // We'll log it and fall through to clipboard copy if it's an AbortError or similar.
+            // For other errors, we might not want to immediately try copying.
+            if ((shareError as DOMException).name === 'AbortError') {
+              console.log('Share was cancelled by the user.');
+              // Optionally, you could display a specific message here or just do nothing and let the user try again.
+              // For now, we'll let it fall through to clipboard attempt if user cancels.
+            } else {
+              console.error('Error using navigator.share:', shareError);
+              // Fall through to clipboard, as share API might be buggy or unexpectedly fail.
+            }
+        }
       }
+
+      // 2. Try navigator.clipboard.write (Copy to Clipboard)
+      if (navigator.clipboard && typeof navigator.clipboard.write === 'function') {
+        try {
+          const clipboardItem = new ClipboardItem({ [blob.type]: blob });
+          await navigator.clipboard.write([clipboardItem]);
+          toast({ title: 'Image Copied!', description: 'Cartoon image copied to clipboard.' });
+        } catch (copyError) {
+          console.error('Error copying image to clipboard:', copyError);
+          toast({
+            title: 'Copy Failed',
+            description: 'Could not copy image. Please download and share manually.',
+            variant: 'destructive',
+          });
+        }
+        return;
+      }
+      
+      // 3. Final fallback: Prompt to download
+      toast({
+        title: 'Sharing Not Supported',
+        description: 'Direct sharing or copying is not supported by your browser. Please download the image to share it.',
+        variant: 'default',
+      });
+
     } catch (err) {
-      console.error('Error sharing:', err);
+      console.error('Error preparing image for sharing:', err);
       toast({
         title: 'Sharing Failed',
-        description: 'Could not share image. Please try downloading and sharing manually.',
+        description: 'Could not prepare image for sharing. Please try downloading.',
         variant: 'destructive',
       });
     }
   };
+
 
   return (
     <Card className="w-full max-w-3xl shadow-xl">
@@ -214,7 +256,7 @@ export default function CartoonArea() {
               <Download className="mr-2 h-5 w-5" /> Download
             </Button>
             <Button onClick={handleShare} variant="default" size="lg" className="bg-primary hover:bg-primary/90">
-              <Send className="mr-2 h-5 w-5" /> Share to Telegram
+              <Share2 className="mr-2 h-5 w-5" /> Share Image
             </Button>
           </div>
         )}
