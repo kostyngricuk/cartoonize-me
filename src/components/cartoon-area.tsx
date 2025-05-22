@@ -64,6 +64,7 @@ export default function CartoonArea() {
         setOriginalImageFile(null);
         setOriginalImageSrc(null);
         setError('Failed to read file.');
+        event.target.value = ''; 
       }
       reader.readAsDataURL(file);
       event.target.value = '';
@@ -159,7 +160,6 @@ export default function CartoonArea() {
     <Card className="w-full max-w-3xl shadow-xl">
       <CardHeader>
         <CardTitle className="text-2xl flex items-center">
-          <Wand2 className="mr-2 h-6 w-6 text-primary" />
           Create Your Cartoon
         </CardTitle>
         <CardDescription>
@@ -239,5 +239,7 @@ export default function CartoonArea() {
     </Card>
   );
 }
+
+    
 
     
